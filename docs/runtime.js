@@ -15,7 +15,7 @@
   "use strict";
 
   var CONFIG = {
-    addOriginalMessageSeparator: true,
+    addOriginalMessageSeparator: false,
     convertJapaneseSentDate: true,
     convertOnlyNewestHeader: true,
     retryDelaysMs: [0, 80, 160, 280, 450, 700, 1000]
