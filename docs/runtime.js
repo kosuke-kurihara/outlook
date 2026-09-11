@@ -228,7 +228,8 @@
     return {
       text: changed ? doc.body.innerHTML : html,
       changed: changed,
-      reason: changed ? "Converted Outlook reply header block." : "Reply header block was already converted."
+      reason: changed ? "Converted Outlook reply header block." :
+        (/差出人|送信|宛先|件名/.test(blocks[0].textContent) ? "Unsupported Outlook header markup." : "Reply header block was already converted.")
     };
   }
 
@@ -356,9 +357,9 @@
     });
   }
 
-  function getBody(item, bodyType) {
+  function getBody(item, bodyType, mode) {
     return new Promise(function (resolve, reject) {
-      item.body.getAsync(bodyType, { bodyMode: Office.MailboxEnums.BodyMode.HostConfig }, function (result) {
+      item.body.getAsync(bodyType, { bodyMode: mode || Office.MailboxEnums.BodyMode.HostConfig }, function (result) {
         if (result.status === Office.AsyncResultStatus.Succeeded) resolve(result.value);
         else reject(result.error);
       });
@@ -415,7 +416,8 @@
         if (/already converted|Body changed/.test(last.reason)) return last;
         if (last.reason === "New message; nothing to convert.") return last;
       } catch (err) {
-        last = { changed: false, reason: err && err.message ? err.message : String(err) };
+        last = { changed: false, reason: "Office API error.", errorCode: err && (err.code || err.name) || "Unknown" };
+        return last;
       }
     }
     return last;
@@ -431,6 +433,53 @@
     }
   }
 
+  // Status only: never include body text, addresses or subjects in diagnostics.
+  function showStatus(message, failed) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var timer = setTimeout(finish, 2500);
+      function finish() { if (!done) { done = true; clearTimeout(timer); resolve(); } }
+      try {
+        var item = Office.context.mailbox.item;
+        if (!item.notificationMessages) { finish(); return; }
+        var details = { type: failed ? "errorMessage" : "informationalMessage", message: ("ERH 1.3.1: " + message).slice(0, 150) };
+        if (!failed) { details.icon = "Icon.16"; details.persistent = true; }
+        item.notificationMessages.replaceAsync("erh-status", details, finish);
+      } catch (_) { finish(); }
+    });
+  }
+
+  async function describeResult(result) {
+    if (result.changed) return "英語ヘッダーへ変換しました。";
+    if (/already converted/.test(result.reason)) return "取得した最新ヘッダーは英語です。";
+    if (/New message/.test(result.reason)) return "新規メールと判定されました。返信・転送画面で実行してください。";
+    if (/Body changed/.test(result.reason)) return "処理中に本文が変わったため中止しました。もう一度押してください。";
+    if (result.errorCode) return "APIエラー: " + String(result.errorCode).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 45);
+    if (/DOMParser/.test(result.reason)) return "HTML解析機能が利用できません。[NO_DOM]";
+    if (/Unsupported/.test(result.reason)) return "ヘッダーはありますが、想定と異なるHTML形式です。[MARKUP]";
+    var item = Office.context.mailbox.item;
+    if (!item || !item.body) return "メールの作成画面が取得できません。[NO_ITEM]";
+    var type = await getBodyType(item);
+    var current = await getBody(item, type);
+    var full = await getBody(item, type, Office.MailboxEnums.BodyMode.FullBody);
+    // FullBody is read only. Do not replace the conversation as a fallback.
+    var probe = String(type).toLowerCase() === "html" ? replaceHtmlHeaders(full) : replacePlainTextHeaders(full);
+    if (full !== current && probe.changed) return "引用ヘッダーが取得範囲の外にあります。[SCOPE]";
+    return "対応する日本語ヘッダーが見つかりません。[NO_HEADER " + String(type) + ", " + current.length + "文字]";
+  }
+
+  async function manualConvert(event) {
+    try {
+      await showStatus("起動しました。ヘッダーを確認中…", false);
+      var result = await transformWithRetry();
+      await showStatus(await describeResult(result), !!result.errorCode);
+    } catch (err) {
+      await showStatus("診断エラー: " + String(err && (err.code || err.name) || "Unknown").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 45), true);
+    } finally {
+      if (event && event.completed) event.completed();
+    }
+  }
+
   root.EnglishReplyHeaders = {
     config: CONFIG,
     convertJapaneseDate: convertJapaneseDate,
@@ -440,12 +489,13 @@
     replaceHtmlHeaders: replaceHtmlHeaders,
     findHtmlReplyHeaderBlocks: findHtmlReplyHeaderBlocks,
     transformCurrentItem: transformCurrentItem,
-    transformWithRetry: transformWithRetry
+    transformWithRetry: transformWithRetry,
+    manualConvert: manualConvert
   };
 
   if (typeof Office !== "undefined" && Office.actions && Office.actions.associate) {
     Office.actions.associate("onNewMessageComposeHandler", onNewMessageComposeHandler);
-    Office.actions.associate("manualConvert", onNewMessageComposeHandler);
+    Office.actions.associate("manualConvert", manualConvert);
   }
   if (typeof Office !== "undefined") Office.onReady(function () {});
 })(typeof globalThis !== "undefined" ? globalThis : this);
