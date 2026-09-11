@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+           xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
+           xsi:type="MailApp">
+  <Id>2dca64b1-c50d-42dd-b4cb-daa5111053c8</Id>
+  <Version>1.3.0.0</Version>
+  <ProviderName>Local</ProviderName>
+  <DefaultLocale>ja-JP</DefaultLocale>
+  <DisplayName DefaultValue="English Reply Headers"/>
+  <Description DefaultValue="Converts Japanese Outlook reply headers to English while composing."/>
+  <IconUrl DefaultValue="https://kosuke-kurihara.github.io/outlook/assets/icon-64.png"/>
+  <HighResolutionIconUrl DefaultValue="https://kosuke-kurihara.github.io/outlook/assets/icon-128.png"/>
+  <SupportUrl DefaultValue="https://kosuke-kurihara.github.io/outlook/index.html"/>
+  <AppDomains>
+    <AppDomain>https://kosuke-kurihara.github.io</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Mailbox"/>
+  </Hosts>
+  <Requirements>
+    <Sets>
+      <Set Name="Mailbox" MinVersion="1.1"/>
+    </Sets>
+  </Requirements>
+  <FormSettings>
+    <Form xsi:type="ItemEdit">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://kosuke-kurihara.github.io/outlook/index.html"/>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+  <Permissions>ReadWriteItem</Permissions>
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Edit"/>
+  </Rule>
+  <DisableEntityHighlighting>false</DisableEntityHighlighting>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides"
+                    xsi:type="VersionOverridesV1_0">
+    <Requirements>
+      <bt:Sets DefaultMinVersion="1.3">
+        <bt:Set Name="Mailbox"/>
+      </bt:Sets>
+    </Requirements>
+    <Hosts>
+      <Host xsi:type="MailHost">
+        <DesktopFormFactor>
+          <FunctionFile resid="Commands.Url"/>
+          <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="EnglishReplyHeaders.Group">
+                <Label resid="Group.Label"/>
+                <Control xsi:type="Button" id="EnglishReplyHeaders.Convert">
+                  <Label resid="Button.Label"/>
+                  <Supertip>
+                    <Title resid="Button.Label"/>
+                    <Description resid="Button.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction"><FunctionName>manualConvert</FunctionName></Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="https://kosuke-kurihara.github.io/outlook/assets/icon-16.png"/>
+        <bt:Image id="Icon.32" DefaultValue="https://kosuke-kurihara.github.io/outlook/assets/icon-32.png"/>
+        <bt:Image id="Icon.80" DefaultValue="https://kosuke-kurihara.github.io/outlook/assets/icon-80.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Commands.Url" DefaultValue="https://kosuke-kurihara.github.io/outlook/runtime.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://kosuke-kurihara.github.io/outlook/index.html"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="Group.Label" DefaultValue="Reply headers"/>
+        <bt:String id="Button.Label" DefaultValue="English headers"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="Button.Tooltip" DefaultValue="Convert Japanese reply headers to English."/>
+      </bt:LongStrings>
+    </Resources>
+
+    <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1"
+                      xsi:type="VersionOverridesV1_1">
+      <Requirements>
+        <bt:Sets DefaultMinVersion="1.10">
+          <bt:Set Name="Mailbox"/>
+        </bt:Sets>
+      </Requirements>
+      <Hosts>
+        <Host xsi:type="MailHost">
+          <Runtimes>
+            <Runtime resid="Runtime.Url">
+              <Override type="javascript" resid="Runtime.Js"/>
+            </Runtime>
+          </Runtimes>
+          <DesktopFormFactor>
+            <FunctionFile resid="Commands.Url"/>
+            <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+              <OfficeTab id="TabDefault">
+                <Group id="EnglishReplyHeaders.Group">
+                  <Label resid="Group.Label"/>
+                  <Control xsi:type="Button" id="EnglishReplyHeaders.Convert">
+                    <Label resid="Button.Label"/>
+                    <Supertip>
+                      <Title resid="Button.Label"/>
+                      <Description resid="Button.Tooltip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Icon.16"/>
+                      <bt:Image size="32" resid="Icon.32"/>
+                      <bt:Image size="80" resid="Icon.80"/>
+                    </Icon>
+                    <Action xsi:type="ExecuteFunction"><FunctionName>manualConvert</FunctionName></Action>
+                  </Control>
+                </Group>
+              </OfficeTab>
+            </ExtensionPoint>
+
+            <ExtensionPoint xsi:type="LaunchEvent">
+              <LaunchEvents>
+                <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler"/>
+              </LaunchEvents>
+              <SourceLocation resid="Runtime.Url"/>
+            </ExtensionPoint>
+          </DesktopFormFactor>
+        </Host>
+      </Hosts>
+      <Resources>
+        <bt:Images>
+          <bt:Image id="Icon.16" DefaultValue="https://kosuke-kurihara.github.io/outlook/assets/icon-16.png"/>
+          <bt:Image id="Icon.32" DefaultValue="https://kosuke-kurihara.github.io/outlook/assets/icon-32.png"/>
+          <bt:Image id="Icon.80" DefaultValue="https://kosuke-kurihara.github.io/outlook/assets/icon-80.png"/>
+        </bt:Images>
+        <bt:Urls>
+          <bt:Url id="Commands.Url" DefaultValue="https://kosuke-kurihara.github.io/outlook/runtime.html"/>
+          <bt:Url id="Taskpane.Url" DefaultValue="https://kosuke-kurihara.github.io/outlook/index.html"/>
+          <bt:Url id="Runtime.Url" DefaultValue="https://kosuke-kurihara.github.io/outlook/runtime.html"/>
+          <bt:Url id="Runtime.Js" DefaultValue="https://kosuke-kurihara.github.io/outlook/runtime.js"/>
+        </bt:Urls>
+        <bt:ShortStrings>
+          <bt:String id="Group.Label" DefaultValue="Reply headers"/>
+          <bt:String id="Button.Label" DefaultValue="English headers"/>
+        </bt:ShortStrings>
+        <bt:LongStrings>
+          <bt:String id="Button.Tooltip" DefaultValue="Convert Japanese reply headers to English."/>
+        </bt:LongStrings>
+      </Resources>
+    </VersionOverrides>
+  </VersionOverrides>
+</OfficeApp>
