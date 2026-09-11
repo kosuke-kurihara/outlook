@@ -51,7 +51,7 @@
   function labelKey(value) {
     var label = normalizeLabel(value);
     if (label === "差出人") return "from";
-    if (label === "送信") return "sent";
+    if (label === "送信" || label === "送信日時") return "sent";
     if (label === "宛先") return "to";
     if (label === "件名") return "subject";
     if (label === "from") return "from";
@@ -234,7 +234,7 @@
   }
 
   function parsePlainHeaderLine(line) {
-    var m = String(line).match(/^([ \t]*)(差出人|送信|宛先|件名|From|Sent|To|Subject|CC|ＣＣ|ｃｃ)\s*[:：][ \t]*(.*)$/i);
+    var m = String(line).match(/^([ \t]*)(差出人|送信日時|送信|宛先|件名|From|Sent|To|Subject|CC|ＣＣ|ｃｃ)\s*[:：][ \t]*(.*)$/i);
     if (!m) return null;
     var key = labelKey(m[2]);
     if (!key) return null;
@@ -306,7 +306,7 @@
     var lines = text.split(/\r?\n/);
     var block = findPlainHeaderBlock(lines);
     if (!block) return { text: text, changed: false, reason: "No strict Outlook reply header sequence found." };
-    if (![block.from, block.sent, block.to, block.subject].some(function (i) { return /^\s*(差出人|送信|宛先|件名)\s*[:：]/.test(lines[i]); })) {
+    if (![block.from, block.sent, block.to, block.subject].some(function (i) { return /^\s*(差出人|送信日時|送信|宛先|件名)\s*[:：]/.test(lines[i]); })) {
       return { text: text, changed: false, reason: "Reply header was already converted." };
     }
 
@@ -442,7 +442,7 @@
       try {
         var item = Office.context.mailbox.item;
         if (!item.notificationMessages) { finish(); return; }
-        var details = { type: failed ? "errorMessage" : "informationalMessage", message: ("ERH 1.3.1: " + message).slice(0, 150) };
+        var details = { type: failed ? "errorMessage" : "informationalMessage", message: ("ERH 1.3.2: " + message).slice(0, 150) };
         if (!failed) { details.icon = "Icon.16"; details.persistent = true; }
         item.notificationMessages.replaceAsync("erh-status", details, finish);
       } catch (_) { finish(); }
