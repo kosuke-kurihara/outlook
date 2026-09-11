@@ -28,6 +28,13 @@ const results = await page.evaluate(async()=>{
   check('Unrelated lines reject block',!api.replacePlainTextHeaders(jp.replace('送信:','unrelated prose\n送信:')).changed);
   check('CRLF preserved',api.replacePlainTextHeaders(jp.replaceAll('\n','\r\n')).text.includes('\r\n'));
   let converted=api.replaceHtmlHeaders(html());
+  const sentAtHtml='<div id="divRplyFwdMsg"><b>差出人:</b> Alice &lt;alice@example.com&gt;<br><b>送信日時:</b> 2026年9月11日 14:12<br><b>宛先:</b> Bob &lt;bob@example.com&gt;<br><b>件名:</b> Re: Example</div>';
+  const sentAt=api.replaceHtmlHeaders(sentAtHtml);
+  check('New Outlook Sent datetime label without Cc',sentAt.changed&&sentAt.text.includes('<b>Sent:</b> 11 Sep 2026 14:12'));
+  check('Sent datetime HTML idempotence',!api.replaceHtmlHeaders(sentAt.text).changed);
+  const sentAtPlain=api.replacePlainTextHeaders(jp.replace('送信:', '送信日時:'));
+  check('Sent datetime plain text label',sentAtPlain.changed&&sentAtPlain.text.includes('Sent: 11 Sep 2026 14:05'));
+  check('Sent datetime older chain preserved',api.replaceHtmlHeaders(sentAtHtml+sentAtHtml.replace('divRplyFwdMsg','divRplyFwdMsg_1')).text.endsWith(sentAtHtml.replace('divRplyFwdMsg','divRplyFwdMsg_1')));
   check('HTML conversion including span date',converted.changed&&converted.text.includes('11 Sep 2026 14:05'));
   check('HTML idempotence',!api.replaceHtmlHeaders(converted.text).changed);
   check('HTML English newest stops older conversion',!api.replaceHtmlHeaders(converted.text+html('divRplyFwdMsg_1')).changed);
